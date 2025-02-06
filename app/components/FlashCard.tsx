@@ -163,19 +163,19 @@ export function FlashCard({
             Upload New File
           </Button>
         </div>
-        {isLastPair && (
-          <div className="space-y-2">
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddMore();
-              }}
-              className="w-full"
-            >
-              Add More Words
-            </Button>
-          </div>
-        )}
+        {/* {isLastPair && ( */}
+        <div className="space-y-2">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddMore();
+            }}
+            className="w-full"
+          >
+            Add More Words
+          </Button>
+        </div>
+        {/* )} */}
       </div>
     </Card>
   );

@@ -7,6 +7,7 @@ import { AddWords } from "./components/AddWords";
 import { WordPair } from "./types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [wordPairs, setWordPairs] = useState<WordPair[]>([]);
@@ -20,6 +21,7 @@ export default function Home() {
   const [showingLowScorePairs, setShowingLowScorePairs] = useState(true);
   const [showRemainingPrompt, setShowRemainingPrompt] = useState(false);
   const [lowHighSwapped, setLowHighSwap] = useState(false);
+  const { toast } = useToast();
 
   const calculateCorrectPercentage = (pair: WordPair) => {
     const total = pair.correctCount + pair.wrongCount;
@@ -36,7 +38,6 @@ export default function Home() {
     const lowScorePairs = sortedPairs.filter(pair => calculateCorrectPercentage(pair) < 80 || pair.correctCount + pair.wrongCount < 10);
     const highScorePairs = sortedPairs.filter(pair => calculateCorrectPercentage(pair) >= 80 && pair.correctCount + pair.wrongCount >= 10);
 
-    // Randomize low score pairs
     const shuffledLowScorePairs = [...lowScorePairs].sort(() => Math.random() - 0.5);
     const shuffledHighScorePairs = [...highScorePairs].sort(() => Math.random() - 0.5);
 
@@ -64,8 +65,14 @@ export default function Home() {
       
       if (lines.length === 0) {
         setError("The file is empty or contains no valid word pairs");
-        // setIsAddingWords(true);
-        // setShowingLowScorePairs(false);
+        setIsFileUploaded(true);
+        setIsAddingWords(true);
+        setShowingLowScorePairs(false);
+        toast({
+          title: "No words to practice",
+          description: "Please add some words to get started.",
+          duration: 3000,
+        });
         return;
       }
 
@@ -91,8 +98,6 @@ export default function Home() {
       
       const { lowScorePairs, highScorePairs } = sortAndFilterPairs(pairs);
 
-      console.trace(lowScorePairs, highScorePairs);
-
       setWordPairs(lowScorePairs);
       setRemainingPairs(highScorePairs);
       setAddedPairs([]);
@@ -109,7 +114,6 @@ export default function Home() {
   const handleAnswer = (isCorrect: boolean) => {
     setWordPairs(prev => prev.map((pair, idx) => {
       if (idx === currentIndex) {
-        // If already answered in this session, undo the previous answer
         if (pair.sessionAnswer === (isCorrect ? 'correct' : 'wrong')) {
           return {
             ...pair,
@@ -118,7 +122,6 @@ export default function Home() {
             sessionAnswer: null
           };
         }
-        // If answered differently in this session, update both counts
         else if (pair.sessionAnswer !== null) {
           return {
             ...pair,
@@ -127,7 +130,6 @@ export default function Home() {
             sessionAnswer: isCorrect ? 'correct' : 'wrong'
           };
         }
-        // First answer in this session
         else {
           return {
             ...pair,
@@ -140,7 +142,6 @@ export default function Home() {
       return pair;
     }));
 
-    // Only move to next pair if this was the first answer in the session
     if (wordPairs[currentIndex].sessionAnswer === null && currentIndex < wordPairs.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setWordPairs(prev => prev.map((pair, idx) => ({
@@ -163,8 +164,16 @@ export default function Home() {
           wrongCount: 0,
           sessionAnswer: null
         };
-        setWordPairs(prev => [...prev, pair]);
-        setAddedPairs(prev => [...prev, pair]);
+        const pair2 = {
+          bengali: arabic,
+          arabic: bengali,
+          revealed: false,
+          correctCount: 0,
+          wrongCount: 0,
+          sessionAnswer: null
+        };
+        setWordPairs(prev => [...prev, pair, pair2]);
+        setAddedPairs(prev => [...prev, pair, pair2]);
         setNewPair("");
       } else {
         setError("Invalid format. Please use: 'বাংলা = العربية'");
@@ -185,8 +194,6 @@ export default function Home() {
     const content = [...wordPairs, ...remainingPairs].map(pair => 
       `[${pair.correctCount},${pair.wrongCount}] ${pair.bengali} = ${pair.arabic}`
     ).join('\n');
-
-    console.trace(content);
     
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -251,6 +258,18 @@ export default function Home() {
     setLowHighSwap(true);
     setCurrentIndex(0);
     setShowingLowScorePairs(false);
+
+    if (remainingPairs.length > 0) {
+      setShowRemainingPrompt(false);
+    } else {
+      setIsAddingWords(true);
+      setError("No additional words to show.");
+      toast({
+          title: "No words to practice",
+          description: "Please add some words to get started.",
+          duration: 3000,
+        });
+    }
     remainingPairs.length > 0 ? setShowRemainingPrompt(false) : setIsAddingWords(true);
   };
 
