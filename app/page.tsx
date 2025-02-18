@@ -252,8 +252,14 @@ export default function Home() {
 
   const showRemainingWords = () => {
     const [tempWordPairs, tempRemainingPairs] = lowHighSwapped ? [wordPairs, remainingPairs] : [remainingPairs, wordPairs];
+
+    const sortedPairs = [...tempWordPairs].sort((a, b) => {
+      const percentageA = calculateCorrectPercentage(a);
+      const percentageB = calculateCorrectPercentage(b);
+      return percentageA - percentageB;
+    });
     
-    setWordPairs(tempWordPairs);
+    setWordPairs(sortedPairs);
     setRemainingPairs(tempRemainingPairs);
     setLowHighSwap(true);
     setCurrentIndex(0);
